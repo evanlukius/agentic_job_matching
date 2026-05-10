@@ -2,30 +2,32 @@ import { useState, useCallback } from "react";
 
 // Agent log steps shown in the terminal console
 export const SCAN_STEPS = [
-  { id: 1,  label: "Loading candidate profile from CV",              icon: "👤", ms: 400  },
-  { id: 2,  label: "Extracting skills & match keywords",             icon: "🔍", ms: 500  },
-  { id: 3,  label: "Scanning JobStreet Indonesia – IT fresh grad",   icon: "🌐", ms: 0    }, // real fetch
-  { id: 4,  label: "Scanning JobStreet – ODP / Management Trainee",  icon: "🌐", ms: 0    },
-  { id: 5,  label: "Scanning JobStreet – Web Developer (React/PHP)", icon: "🌐", ms: 0    },
-  { id: 6,  label: "Scanning JobStreet – Cloud / GCP / DevOps",      icon: "🌐", ms: 0    },
-  { id: 7,  label: "Scanning JobStreet – Data Analyst / Python",     icon: "🌐", ms: 0    },
-  { id: 8,  label: "Scanning JobStreet – Software Engineer",         icon: "🌐", ms: 0    },
-  { id: 9,  label: "Scanning JobStreet – IT Business Analyst / ERP", icon: "🌐", ms: 0    },
-  { id: 10, label: "Deduplicating & merging results",                icon: "🔗", ms: 300  },
-  { id: 11, label: "Scoring jobs against candidate profile",         icon: "🤖", ms: 400  },
-  { id: 12, label: "Ranking by AI match score",                      icon: "📊", ms: 300  },
-  { id: 13, label: "Generating cover letter templates",              icon: "✍️", ms: 300  },
-  { id: 14, label: "Preparing auto-fill data",                       icon: "📋", ms: 200  },
-  { id: 15, label: "Done",                                           icon: "✅", ms: 0    },
+  { id: 1,  label: "Loading candidate profile from CV",                         icon: "👤" },
+  { id: 2,  label: "Extracting skills & match keywords",                        icon: "🔍" },
+  { id: 3,  label: "Scanning JobStreet 🇮🇩 – IT fresh graduate / informatics",  icon: "🌐" },
+  { id: 4,  label: "Scanning JobStreet 🇮🇩 – ODP / Officer Development",        icon: "🌐" },
+  { id: 5,  label: "Scanning JobStreet 🇮🇩 – Management Trainee / Digital",     icon: "🌐" },
+  { id: 6,  label: "Scanning JobStreet 🇮🇩 – Junior Web Developer / Cloud",     icon: "🌐" },
+  { id: 7,  label: "Scanning JobStreet 🇮🇩 – Data Analyst / Software Engineer", icon: "🌐" },
+  { id: 8,  label: "Scanning JobStreet 🇲🇾 🇸🇬 🇵🇭 – IT / Web / Cloud / Data",  icon: "🌐" },
+  { id: 9,  label: "Scanning JobStreet 🇯🇵 – IT / Engineer / Bilingual",        icon: "🌐" },
+  { id: 10, label: "Scanning LinkedIn 🇮🇩 – IT / Web / Cloud / Data",           icon: "💼" },
+  { id: 11, label: "Scanning LinkedIn 🇲🇾 🇸🇬 🇵🇭 – IT / Developer / Analyst",  icon: "💼" },
+  { id: 12, label: "Scanning LinkedIn 🇯🇵 – IT / Engineer / Bilingual",         icon: "💼" },
+  { id: 13, label: "Deduplicating & merging all results",                       icon: "🔗" },
+  { id: 14, label: "Scoring jobs against candidate profile",                    icon: "🤖" },
+  { id: 15, label: "Ranking by AI match score",                                 icon: "📊" },
+  { id: 16, label: "Generating cover letter templates",                         icon: "✍️" },
+  { id: 17, label: "Done",                                                      icon: "✅" },
 ];
 
 export function useJobScan() {
-  const [state, setState]       = useState("idle");   // idle | running | done | error
-  const [step, setStep]         = useState(0);
-  const [jobs, setJobs]         = useState([]);
-  const [meta, setMeta]         = useState(null);     // { scannedAt, totalFound }
-  const [error, setError]       = useState(null);
-  const [stepLog, setStepLog]   = useState([]);       // { id, label, icon, status, count? }
+  const [state, setState]     = useState("idle");
+  const [step, setStep]       = useState(0);
+  const [jobs, setJobs]       = useState([]);
+  const [meta, setMeta]       = useState(null);
+  const [error, setError]     = useState(null);
+  const [stepLog, setStepLog] = useState([]);
 
   const logStep = useCallback((id, status, extra = {}) => {
     setStepLog(prev => {
@@ -46,53 +48,64 @@ export function useJobScan() {
     setError(null);
     setStepLog([]);
 
-    // Steps 1–2: local prep (animated delay)
-    logStep(1, "running");
-    await delay(SCAN_STEPS[0].ms);
-    logStep(1, "done");
+    // Steps 1–2: local prep
+    logStep(1, "running"); logStep(1, "done");
+    logStep(2, "running"); logStep(2, "done");
 
-    logStep(2, "running");
-    await delay(SCAN_STEPS[1].ms);
-    logStep(2, "done");
+    // Steps 3–12: mark all live-scan steps running
+    for (let i = 3; i <= 12; i++) logStep(i, "running");
 
-    // Steps 3–9: mark as running (real fetch happens in parallel)
-    for (let i = 3; i <= 9; i++) logStep(i, "running");
+    // Fire JobStreet + LinkedIn scans in parallel
+    const [jsResult, liResult] = await Promise.allSettled([
+      fetch("/api/scan").then(r => r.ok ? r.json() : Promise.reject(new Error(`JobStreet ${r.status}`))),
+      fetch("/api/scan-linkedin").then(r => r.ok ? r.json() : Promise.reject(new Error(`LinkedIn ${r.status}`))),
+    ]);
 
-    // Fire the real scan
-    let data;
-    try {
-      const res = await fetch("/api/scan");
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-      data = await res.json();
-      if (!data.ok) throw new Error(data.error || "Scan failed");
-    } catch (err) {
-      // Mark fetch steps as error
+    // Handle JobStreet result (steps 3–9)
+    if (jsResult.status === "fulfilled" && jsResult.value.ok) {
+      for (let i = 3; i <= 9; i++) logStep(i, "done");
+    } else {
       for (let i = 3; i <= 9; i++) logStep(i, "error");
-      setError(err.message);
+    }
+
+    // Handle LinkedIn result (steps 10–12)
+    if (liResult.status === "fulfilled" && liResult.value.ok) {
+      for (let i = 10; i <= 12; i++) logStep(i, "done");
+    } else {
+      for (let i = 10; i <= 12; i++) logStep(i, "error");
+    }
+
+    // If both failed, error out
+    const jsJobs = jsResult.status === "fulfilled" && jsResult.value.ok ? jsResult.value.jobs : [];
+    const liJobs = liResult.status === "fulfilled" && liResult.value.ok ? liResult.value.jobs : [];
+
+    if (jsJobs.length === 0 && liJobs.length === 0) {
+      const errMsg = jsResult.reason?.message || liResult.reason?.message || "Both scans failed";
+      setError(errMsg);
       setState("error");
       return;
     }
 
-    // Mark fetch steps done
-    for (let i = 3; i <= 9; i++) logStep(i, "done");
+    // Steps 13–16: post-processing
+    for (let i = 13; i <= 16; i++) { logStep(i, "running"); logStep(i, "done"); }
 
-    // Steps 10–14: post-processing (animated)
-    for (let i = 10; i <= 14; i++) {
-      logStep(i, "running");
-      await delay(SCAN_STEPS[i - 1].ms);
-      logStep(i, "done");
+    // Merge + deduplicate by id
+    const seen = new Set();
+    const merged = [];
+    for (const job of [...jsJobs, ...liJobs]) {
+      if (seen.has(job.id)) continue;
+      seen.add(job.id);
+      merged.push(job);
     }
+    merged.sort((a, b) => b.matchScore - a.matchScore);
 
-    logStep(15, "done", { count: data.jobs.length });
+    logStep(17, "done", { count: merged.length });
 
-    setJobs(data.jobs);
-    setMeta({ scannedAt: data.scannedAt, totalFound: data.totalFound });
+    const scannedAt = jsResult.value?.scannedAt || new Date().toISOString().slice(0, 10);
+    setJobs(merged);
+    setMeta({ scannedAt, totalFound: merged.length, linkedInCount: liJobs.length, jobStreetCount: jsJobs.length });
     setState("done");
   }, [state, logStep]);
 
   return { state, step, jobs, meta, error, stepLog, run };
-}
-
-function delay(ms) {
-  return new Promise(r => setTimeout(r, ms));
 }

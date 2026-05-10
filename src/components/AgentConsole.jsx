@@ -39,8 +39,7 @@ export default function AgentConsole({ stepLog, state, totalFound }) {
         </div>
         <span style={{ color: "#5a6478", fontSize: 11, marginLeft: 4 }}>
           evan-job-agent ~ live-scan
-        </span>
-        <span style={{
+        </span>        <span style={{
           marginLeft: "auto", fontSize: 11,
           color: state === "running" ? "#f59e0b" : state === "done" ? "#22c55e" : "#ef4444",
           animation: state === "running" ? "pulse 1.5s infinite" : "none",
@@ -51,7 +50,7 @@ export default function AgentConsole({ stepLog, state, totalFound }) {
 
       {/* Command line */}
       <div style={{ color: "#4f8ef7", marginBottom: 8 }}>
-        $ evan-agent --scan --live --source=jobstreet.co.id --country=ID --date={new Date().toISOString().slice(0,10)}
+        $ evan-agent --scan --live --source=jobstreet --regions=ID,MY,SG,PH,JP --date={new Date().toISOString().slice(0,10)}
       </div>
 
       {/* Step log */}
@@ -65,8 +64,7 @@ export default function AgentConsole({ stepLog, state, totalFound }) {
           <span style={{ color: "#22c55e", minWidth: 12 }}>›</span>
           <span style={{ color: "#5a6478", minWidth: 52, fontSize: 11 }}>
             [{String(s.id).padStart(2,"0")}/{SCAN_STEPS.length}]
-          </span>
-          <span>{s.icon}</span>
+          </span>          <span>{s.icon}</span>
           <span style={{ color: s.status === "running" ? "#e8eaf0" : "#8b95a8", flex: 1 }}>
             {s.label}
           </span>
@@ -85,7 +83,7 @@ export default function AgentConsole({ stepLog, state, totalFound }) {
 
       {state === "done" && (
         <div style={{ marginTop: 8, color: "#22c55e", fontWeight: 600 }}>
-          ✅ Scan complete — {totalFound} live jobs found from JobStreet Indonesia, ranked by match score.
+          ✅ Scan complete — {totalFound} live jobs found across JobStreet & LinkedIn (🇮🇩 🇲🇾 🇸🇬 🇵🇭 🇯🇵), ranked by match score.
         </div>
       )}
       {state === "error" && (

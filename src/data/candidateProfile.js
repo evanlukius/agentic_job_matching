@@ -11,6 +11,14 @@ export const candidate = {
   university: "Universitas Kristen Maranatha",
   graduationYear: 2025,
 
+  // JobStreet profile — used for apply flow & profile linking
+  jobstreetProfile: "https://id.jobstreet.com/profiles/evanagustian-lukius-c91Xq276yM",
+  jobstreetLogin:   "https://id.jobstreet.com/oauth/login",
+
+  // LinkedIn profile
+  linkedinProfile:  "https://www.linkedin.com/in/evanlukius/",
+  linkedinLogin:    "https://www.linkedin.com/login",
+
   summary:
     "IT graduate (GPA 3.68) with international experience in Japan and strong skills in analysis, " +
     "problem-solving, and digital systems. Experienced in web development, data management, and " +

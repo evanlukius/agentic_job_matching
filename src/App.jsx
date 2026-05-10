@@ -4,7 +4,9 @@ import CandidatePanel from "./components/CandidatePanel.jsx";
 import JobCard from "./components/JobCard.jsx";
 import StatsBar from "./components/StatsBar.jsx";
 import FilterBar from "./components/FilterBar.jsx";
-import { useJobScan } from "./hooks/useJobScan.js";
+import TrackerPanel from "./components/TrackerPanel.jsx";
+import { useJobScan, SCAN_STEPS } from "./hooks/useJobScan.js";
+import { useTracker } from "./hooks/useTracker.js";
 
 const TODAY = new Date().toLocaleDateString("en-ID", {
   weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -12,9 +14,13 @@ const TODAY = new Date().toLocaleDateString("en-ID", {
 
 export default function App() {
   const { state, jobs, meta, error, stepLog, run } = useJobScan();
+  const { entries, upsert, updateStatus, updateNotes, remove, getEntry } = useTracker();
+  const [showTracker, setShowTracker] = useState(false);
 
   const [filters, setFilters] = useState({
     search: "",
+    region: "All",
+    source: "All",
     workType: "All",
     arrangement: "All",
     minMatch: 0,
@@ -34,6 +40,12 @@ export default function App() {
         j.teaser?.toLowerCase().includes(q) ||
         j.tags.some(t => t.toLowerCase().includes(q))
       );
+    }
+    if (filters.region && filters.region !== "All") {
+      list = list.filter(j => j.region === filters.region);
+    }
+    if (filters.source && filters.source !== "All") {
+      list = list.filter(j => j.source?.includes(filters.source));
     }
     if (filters.workType !== "All") {
       list = list.filter(j => j.type?.toLowerCase().includes(filters.workType.toLowerCase()));
@@ -69,6 +81,16 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      {/* Tracker panel */}
+      {showTracker && (
+        <TrackerPanel
+          entries={entries}
+          onStatusChange={updateStatus}
+          onRemove={remove}
+          onNoteChange={updateNotes}
+          onClose={() => setShowTracker(false)}
+        />
+      )}
       {/* Nav */}
       <nav style={{
         background: "var(--bg2)", borderBottom: "1px solid var(--border)",
@@ -78,7 +100,33 @@ export default function App() {
       }}>
         <span style={{ fontSize: 20 }}>🤖</span>
         <span style={{ fontWeight: 800, fontSize: 15 }}>Evan's Job Agent</span>
-        <span className="badge badge-blue" style={{ fontSize: 10 }}>Indonesia · Live</span>
+        <span className="badge badge-blue" style={{ fontSize: 10 }}>Indonesia · Malaysia · Singapore · Philippines · Japan · Live</span>
+        <a
+          href="https://id.jobstreet.com/profiles/evanagustian-lukius-c91Xq276yM"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", gap: 5,
+            padding: "4px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600,
+            background: "rgba(79,142,247,.12)", border: "1px solid rgba(79,142,247,.25)",
+            color: "#7eb3ff", textDecoration: "none",
+          }}
+        >
+          🌐 JobStreet ↗
+        </a>
+        <a
+          href="https://www.linkedin.com/in/evanlukius/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", gap: 5,
+            padding: "4px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600,
+            background: "rgba(10,102,194,.15)", border: "1px solid rgba(10,102,194,.3)",
+            color: "#60a5fa", textDecoration: "none",
+          }}
+        >
+          💼 LinkedIn ↗
+        </a>
 
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 11, color: "var(--text3)" }}>📅 {TODAY}</span>
@@ -92,6 +140,28 @@ export default function App() {
               ⟳ Scanning...
             </span>
           )}
+          {/* Tracker button */}
+          <button
+            onClick={() => setShowTracker(true)}
+            style={{
+              padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+              background: entries.length > 0 ? "rgba(79,142,247,.15)" : "var(--bg3)",
+              border: `1px solid ${entries.length > 0 ? "rgba(79,142,247,.3)" : "var(--border)"}`,
+              color: entries.length > 0 ? "#7eb3ff" : "var(--text2)",
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+            }}
+          >
+            📊 Tracker
+            {entries.length > 0 && (
+              <span style={{
+                background: "var(--accent)", color: "#fff",
+                borderRadius: 10, fontSize: 10, fontWeight: 700,
+                padding: "1px 6px", minWidth: 18, textAlign: "center",
+              }}>
+                {entries.length}
+              </span>
+            )}
+          </button>
         </div>
       </nav>
 
@@ -102,7 +172,7 @@ export default function App() {
             🎯 Agentic Job Finder — Live Scan
           </h1>
           <p style={{ color: "var(--text2)", fontSize: 13 }}>
-            Scans <strong>JobStreet Indonesia</strong> in real-time using today's date,
+            Scans <strong>JobStreet</strong> & <strong>LinkedIn</strong> across 🇮🇩 Indonesia, 🇲🇾 Malaysia, 🇸🇬 Singapore, 🇵🇭 Philippines & 🇯🇵 Japan in real-time,
             scores every result against your CV, and generates cover letters + auto-fill data.
           </p>
         </div>
@@ -143,11 +213,11 @@ export default function App() {
                 <div style={{ marginTop: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text3)", marginBottom: 3 }}>
                     <span>Progress</span>
-                    <span>{stepLog.filter(s => s.status === "done").length} / 15 steps</span>
+                    <span>{stepLog.filter(s => s.status === "done").length} / {SCAN_STEPS.length} steps</span>
                   </div>
                   <div style={{ height: 3, background: "var(--bg3)", borderRadius: 2, overflow: "hidden" }}>
                     <div style={{
-                      width: `${(stepLog.filter(s => s.status === "done").length / 15) * 100}%`,
+                      width: `${(stepLog.filter(s => s.status === "done").length / SCAN_STEPS.length) * 100}%`,
                       height: "100%",
                       background: state === "done" ? "#22c55e" : "linear-gradient(90deg, var(--accent), var(--accent2))",
                       borderRadius: 2, transition: "width .4s ease",
@@ -162,11 +232,16 @@ export default function App() {
                   Live Sources
                 </div>
                 {[
-                  { name: "JobStreet Indonesia",  url: "https://id.jobstreet.com",    icon: "🌐", live: true },
-                  { name: "Glints Indonesia",     url: "https://glints.com/id/en",    icon: "🌐", live: false },
-                  { name: "Kalibrr",              url: "https://www.kalibrr.id",      icon: "🌐", live: false },
-                  { name: "Dealls.com",           url: "https://dealls.com",          icon: "🌐", live: false },
-                  { name: "Loker BUMN",           url: "https://lokerbumn.com",       icon: "🏛️", live: false },
+                  { name: "JobStreet Indonesia 🇮🇩", url: "https://id.jobstreet.com",    icon: "🌐", live: true  },
+                  { name: "JobStreet Malaysia 🇲🇾",  url: "https://my.jobstreet.com",    icon: "🌐", live: true  },
+                  { name: "JobStreet Singapore 🇸🇬", url: "https://sg.jobstreet.com",    icon: "🌐", live: true  },
+                  { name: "JobStreet Philippines 🇵🇭",url: "https://ph.jobstreet.com",   icon: "🌐", live: true  },
+                  { name: "JobStreet Japan 🇯🇵",     url: "https://jp.jobstreet.com",    icon: "🌐", live: true  },
+                  { name: "LinkedIn 🇮🇩🇲🇾🇸🇬🇵🇭🇯🇵",  url: "https://www.linkedin.com/jobs/", icon: "💼", live: true  },
+                  { name: "Glints Indonesia",         url: "https://glints.com/id/en",   icon: "🌐", live: false },
+                  { name: "Kalibrr",                  url: "https://www.kalibrr.id",     icon: "🌐", live: false },
+                  { name: "Dealls.com",               url: "https://dealls.com",         icon: "🌐", live: false },
+                  { name: "Loker BUMN",               url: "https://lokerbumn.com",      icon: "🏛️", live: false },
                 ].map(p => (
                   <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer"
                     style={{
@@ -194,13 +269,18 @@ export default function App() {
                   Search Queries
                 </div>
                 {[
-                  "IT fresh graduate Indonesia",
+                  "IT fresh graduate Indonesia 🇮🇩",
                   "ODP / Management Trainee IT",
                   "Junior Web Developer ReactJS PHP",
                   "Cloud Engineer GCP DevOps",
                   "Data Analyst SQL Python",
                   "Software Engineer fresh graduate",
                   "IT Business Analyst ERP",
+                  "IT fresh graduate Malaysia 🇲🇾",
+                  "IT fresh graduate Singapore 🇸🇬",
+                  "IT fresh graduate Philippines 🇵🇭",
+                  "IT Engineer bilingual Japan 🇯🇵",
+                  "LinkedIn: IT entry level 🇮🇩🇲🇾🇸🇬🇵🇭🇯🇵",
                 ].map(q => (
                   <div key={q} style={{ fontSize: 11, color: "var(--text3)", padding: "2px 0", display: "flex", gap: 6 }}>
                     <span style={{ color: "var(--accent)" }}>›</span> {q}
@@ -234,9 +314,10 @@ export default function App() {
                 <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
                   Ready to Scan Live Jobs
                 </h2>
-                <p style={{ color: "var(--text2)", fontSize: 13, maxWidth: 400, margin: "0 auto 22px" }}>
+                <p style={{ color: "var(--text2)", fontSize: 13, maxWidth: 420, margin: "0 auto 22px" }}>
                   Click <strong>Scan Live Jobs</strong> to fetch real-time openings from
-                  JobStreet Indonesia, scored against your CV profile.
+                  <strong> JobStreet</strong> & <strong>LinkedIn</strong> across 🇮🇩 🇲🇾 🇸🇬 🇵🇭 🇯🇵,
+                  scored against your CV profile.
                 </p>
                 <button
                   onClick={run}
@@ -257,7 +338,8 @@ export default function App() {
                     ["🤖", "AI match scoring"],
                     ["✍️", "Cover letter gen"],
                     ["📋", "Auto-fill forms"],
-                    ["🚀", "Direct apply links"],
+                    ["🚀", "One-click apply"],
+                    ["📊", "App tracker"],
                   ].map(([icon, label]) => (
                     <div key={label} style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 22, marginBottom: 3 }}>{icon}</div>
@@ -321,7 +403,14 @@ export default function App() {
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                     {filtered.map((job, i) => (
-                      <JobCard key={job.id} job={job} index={i} />
+                      <JobCard
+                        key={job.id}
+                        job={job}
+                        index={i}
+                        trackerEntry={getEntry(job.id)}
+                        onApply={(j, status, notes) => upsert(j, status, notes)}
+                        onStatusChange={updateStatus}
+                      />
                     ))}
                   </div>
                 )}
@@ -334,9 +423,9 @@ export default function App() {
                 }}>
                   <span>ℹ️</span>
                   <span>
-                    Live data from <strong>JobStreet Indonesia</strong> (id.jobstreet.com) — scanned {meta?.scannedAt || "today"}.
-                    Match scores are calculated against Evan's CV skills, education, and experience.
-                    Click "Apply on JobStreet" to go directly to the job listing.
+                    Live data from <strong>JobStreet</strong> & <strong>LinkedIn</strong> — 🇮🇩 Indonesia, 🇲🇾 Malaysia, 🇸🇬 Singapore, 🇵🇭 Philippines & 🇯🇵 Japan — scanned {meta?.scannedAt || "today"}.
+                    {meta?.jobStreetCount != null && ` JobStreet: ${meta.jobStreetCount} · LinkedIn: ${meta.linkedInCount}.`}
+                    {" "}Match scores calculated against Evan's CV. Click any job to apply.
                   </span>
                 </div>
               </div>

@@ -31,6 +31,23 @@ export default function FilterBar({ filters, setFilters, totalShown, totalJobs }
         />
       </div>
 
+      {/* Region */}
+      <select value={filters.region || "All"} onChange={e => update("region", e.target.value)} style={sel}>
+        <option value="All">🌏 All Regions</option>
+        <option value="ID">🇮🇩 Indonesia</option>
+        <option value="MY">🇲🇾 Malaysia</option>
+        <option value="SG">🇸🇬 Singapore</option>
+        <option value="PH">🇵🇭 Philippines</option>
+        <option value="JP">🇯🇵 Japan</option>
+      </select>
+
+      {/* Source */}
+      <select value={filters.source || "All"} onChange={e => update("source", e.target.value)} style={sel}>
+        <option value="All">📡 All Sources</option>
+        <option value="JobStreet">🌐 JobStreet</option>
+        <option value="LinkedIn">💼 LinkedIn</option>
+      </select>
+
       {/* Work type */}
       <select value={filters.workType} onChange={e => update("workType", e.target.value)} style={sel}>
         <option value="All">All Types</option>

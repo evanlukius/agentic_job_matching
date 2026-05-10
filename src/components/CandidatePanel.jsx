@@ -35,20 +35,111 @@ export default function CandidatePanel() {
             </div>
           </div>
         </div>
+
+        {/* LinkedIn profile link */}
+        <a
+          href={candidate.linkedinProfile}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            marginTop: 6, padding: "8px 11px",
+            background: "rgba(10,102,194,.12)",
+            border: "1px solid rgba(10,102,194,.28)",
+            borderRadius: 8, textDecoration: "none",
+            transition: "background .15s",
+          }}
+          onMouseOver={e => e.currentTarget.style.background = "rgba(10,102,194,.22)"}
+          onMouseOut={e => e.currentTarget.style.background = "rgba(10,102,194,.12)"}
+        >
+          <span style={{ fontSize: 16 }}>💼</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa" }}>
+              LinkedIn Profile
+            </div>
+            <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 1 }}>
+              linkedin.com/in/evanlukius
+            </div>
+          </div>
+          <span style={{ fontSize: 12, color: "#60a5fa" }}>↗</span>
+        </a>
+
+        {/* JobStreet profile link */}
+        <a
+          href={candidate.jobstreetProfile}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            marginTop: 14, padding: "8px 11px",
+            background: "rgba(79,142,247,.12)",
+            border: "1px solid rgba(79,142,247,.25)",
+            borderRadius: 8, textDecoration: "none",
+            transition: "background .15s",
+          }}
+          onMouseOver={e => e.currentTarget.style.background = "rgba(79,142,247,.22)"}
+          onMouseOut={e => e.currentTarget.style.background = "rgba(79,142,247,.12)"}
+        >
+          <span style={{ fontSize: 16 }}>🌐</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#7eb3ff" }}>
+              JobStreet Profile
+            </div>
+            <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              id.jobstreet.com · evanagustian-lukius
+            </div>
+          </div>
+          <span style={{ fontSize: 12, color: "#7eb3ff" }}>↗</span>
+        </a>
+
+        {/* Login reminder */}
+        <a
+          href={candidate.jobstreetLogin}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            marginTop: 6, padding: "7px 11px",
+            background: "rgba(34,197,94,.08)",
+            border: "1px solid rgba(34,197,94,.2)",
+            borderRadius: 8, textDecoration: "none",
+            transition: "background .15s",
+          }}
+          onMouseOver={e => e.currentTarget.style.background = "rgba(34,197,94,.15)"}
+          onMouseOut={e => e.currentTarget.style.background = "rgba(34,197,94,.08)"}
+        >
+          <span style={{ fontSize: 14 }}>🔑</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#4ade80" }}>
+              Log in to JobStreet
+            </div>
+            <div style={{ fontSize: 10, color: "var(--text3)", marginTop: 1 }}>
+              Required before applying
+            </div>
+          </div>
+          <span style={{ fontSize: 12, color: "#4ade80" }}>↗</span>
+        </a>
       </div>
 
       <div style={{ padding: "16px" }}>
         {/* Contact */}
         <Section title="Contact">
           {[
-            ["📧", candidate.email],
-            ["📱", candidate.phone],
-            ["🔗", candidate.linkedin],
-            ["📍", candidate.location],
-          ].map(([icon, val]) => (
+            ["📧", candidate.email,    null],
+            ["📱", candidate.phone,    null],
+            ["🔗", candidate.linkedin, `https://${candidate.linkedin}`],
+            ["📍", candidate.location, null],
+          ].map(([icon, val, href]) => (
             <div key={val} style={{ display: "flex", gap: 8, fontSize: 12, marginBottom: 5, alignItems: "flex-start" }}>
               <span>{icon}</span>
-              <span style={{ color: "var(--text2)", wordBreak: "break-all" }}>{val}</span>
+              {href ? (
+                <a href={href} target="_blank" rel="noopener noreferrer"
+                  style={{ color: "var(--accent)", wordBreak: "break-all" }}>
+                  {val}
+                </a>
+              ) : (
+                <span style={{ color: "var(--text2)", wordBreak: "break-all" }}>{val}</span>
+              )}
             </div>
           ))}
         </Section>
